@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  cassandra:
+    image: cassandra:4.1
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: operations-cluster
+      CASSANDRA_DATACENTER: datacenter1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+
+  cassandra-init:
+    image: cassandra:4.1
+    depends_on:
+      - cassandra
+    volumes:
+      - ./docker/cassandra/init.cql:/init.cql:ro
+    entrypoint: ["/bin/bash", "-c", "sleep 25 && cqlsh cassandra 9042 -f /init.cql"]
+
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: ingestion-service/Dockerfile
+    depends_on:
+      - kafka
+      - cassandra-init
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CASSANDRA_CONTACT_POINTS: cassandra
+      CASSANDRA_DATACENTER: datacenter1
+      CASSANDRA_KEYSPACE: operations
+      SPRING_PROFILES_ACTIVE: dev
+      PURCHASE_TOPIC: purchase-operations
+
+  query-service:
+    build:
+      context: .
+      dockerfile: query-service/Dockerfile
+    depends_on:
+      - cassandra-init
+    ports:
+      - "9090:9090"
+    environment:
+      CASSANDRA_CONTACT_POINTS: cassandra
+      CASSANDRA_DATACENTER: datacenter1
+      CASSANDRA_KEYSPACE: operations
+      GRPC_PORT: 9090
+      SPRING_PROFILES_ACTIVE: dev
+
+  grpcui:
+    image: fullstorydev/grpcui:v1.4.1
+    depends_on:
+      - query-service
+    ports:
+      - "8088:8080"
+    command:
+      - "-plaintext"
+      - "query-service:9090"

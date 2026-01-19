@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package com.edu.operations.proto;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "com.edu.operations.proto";
+
+service OperationsService {
+  rpc GetOperations (OperationsRequest) returns (OperationsResponse);
+}
+
+message OperationsRequest {
+  int64 user_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  int32 page_size = 4;
+  string paging_state = 5;
+}
+
+message OperationsResponse {
+  repeated Operation operations = 1;
+  string next_paging_state = 2;
+}
+
+message Operation {
+  int64 user_id = 1;
+  int64 operation_id = 2;
+  string amount = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+}
