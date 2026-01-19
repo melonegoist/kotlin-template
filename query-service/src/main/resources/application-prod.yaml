@@ -1,0 +1,6 @@
+spring:
+  cassandra:
+    schema-action: none
+logging:
+  level:
+    root: info

@@ -1,0 +1,6 @@
+spring:
+  cassandra:
+    schema-action: create-if-not-exists
+logging:
+  level:
+    com.edu.operations: debug

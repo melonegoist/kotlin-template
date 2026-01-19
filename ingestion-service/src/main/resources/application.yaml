@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: ingestion-service
+  main:
+    web-application-type: none
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ingestion-service
+      properties:
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 15000
+        request.timeout.ms: 20000
+  cassandra:
+    keyspace-name: ${CASSANDRA_KEYSPACE:operations}
+    local-datacenter: ${CASSANDRA_DATACENTER:datacenter1}
+    contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
+    port: ${CASSANDRA_PORT:9042}
+    schema-action: create-if-not-exists
+    connection:
+      connect-timeout: 5s
+      init-query-timeout: 5s
+
+app:
+  kafka:
+    topics:
+      purchase-operations: ${PURCHASE_TOPIC:purchase-operations}
+
+logging:
+  level:
+    root: info
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
