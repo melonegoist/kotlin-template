@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: query-service
+  cassandra:
+    keyspace-name: ${CASSANDRA_KEYSPACE:operations}
+    local-datacenter: ${CASSANDRA_DATACENTER:datacenter1}
+    contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
+    port: ${CASSANDRA_PORT:9042}
+    schema-action: create-if-not-exists
+    connection:
+      connect-timeout: 5s
+      init-query-timeout: 5s
+
+grpc:
+  server:
+    port: ${GRPC_PORT:9090}
+    max-inbound-message-size: 4MB
+    reflection-service-enabled: true
+
+app:
+  paging:
+    default-size: 100
+    max-size: 500
+
+logging:
+  level:
+    root: info
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
